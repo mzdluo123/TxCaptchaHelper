@@ -11,15 +11,15 @@ android {
         applicationId "io.github.mzdluo123.txcaptchahelper"
         minSdkVersion 21
         targetSdkVersion 29
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -40,7 +40,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
-    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    implementation 'com.king.zxing:zxing-lite:2.0.2'
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'

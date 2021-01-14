@@ -1,15 +1,25 @@
 package io.github.mzdluo123.txcaptchahelper
 
+import android.Manifest
 import android.content.*
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.king.zxing.CameraScan
+import com.king.zxing.CaptureActivity
 import kotlinx.android.synthetic.main.activity_main.*
+
 
 class MainActivity : AppCompatActivity() {
     companion object {
-        const val REQUEST_CODE = 1
+        const val REQUEST_CODE_SLIDE = 1
+        const val REQUEST_CODE_QRSCAN = 2
+        const val REQUEST_CODE_PERMISSION = 3
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,14 +36,25 @@ class MainActivity : AppCompatActivity() {
             }
             startActivityForResult(
                 Intent(this, CaptchaActivity::class.java).putExtra("url", url),
-                REQUEST_CODE
+                REQUEST_CODE_SLIDE
             )
+        }
+        scan_btn.setOnClickListener {
+
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CODE_PERMISSION);
+            } else {
+//                startActivity(Intent(this, CaptchaActivity::class.java))
+                startActivityForResult(Intent(this, CaptureActivity::class.java), REQUEST_CODE_QRSCAN)
+
+            }
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_CODE) {
+        if (requestCode == REQUEST_CODE_SLIDE) {
             if (data == null) {
                 return
             }
@@ -50,7 +71,18 @@ class MainActivity : AppCompatActivity() {
                     clipboardManager.setPrimaryClip(data)
                     Toast.makeText(this, "复制成功", Toast.LENGTH_SHORT).show()
                 }).show()
+            return
         }
-
+        if (requestCode == REQUEST_CODE_QRSCAN){
+            val data = CameraScan.parseScanResult(data)
+            startActivityForResult(
+                Intent(this, CaptchaActivity::class.java).putExtra("url", data),
+                REQUEST_CODE_SLIDE
+            )
+            return
+        }
+        if (requestCode == REQUEST_CODE_PERMISSION){
+            startActivityForResult(Intent(this, CaptureActivity::class.java), REQUEST_CODE_QRSCAN)
+        }
     }
 }
