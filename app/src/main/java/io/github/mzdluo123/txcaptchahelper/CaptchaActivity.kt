@@ -50,7 +50,6 @@ class CaptchaActivity : AppCompatActivity() {
     inner class Bridge {
         @JavascriptInterface
         fun invoke(cls: String?, method: String?, data: String?) {
-
             if (data != null) {
                 val jsData = JsonParser.parseString(data)
                 if (method == "onVerifyCAPTCHA") {

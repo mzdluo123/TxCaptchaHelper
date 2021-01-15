@@ -54,10 +54,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (data == null) {
+            return
+        }
         if (requestCode == REQUEST_CODE_SLIDE) {
-            if (data == null) {
-                return
-            }
             val ticket = data.getStringExtra("ticket")
             if (ticket == null) {
                 Toast.makeText(this, "出现未知错误，请联系开发者", Toast.LENGTH_SHORT).show()
