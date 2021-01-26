@@ -3,6 +3,7 @@ plugins {
     id 'kotlin-android'
     id 'kotlin-android-extensions'
 }
+def onlineService = "https://txhelper.glitch.me/"
 
 android {
     compileSdkVersion 29
@@ -13,8 +14,8 @@ android {
         targetSdkVersion 29
         versionCode 2
         versionName "1.1"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "OnlineService", "\"$onlineService\"")
     }
 
     buildTypes {
@@ -42,6 +43,7 @@ dependencies {
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
     implementation 'com.king.zxing:zxing-lite:2.0.2'
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
 
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
