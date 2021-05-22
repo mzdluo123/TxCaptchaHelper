@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun submitTicker(ticket: String) {
+    private fun submitTicket(ticket: String) {
         val alert =
             AlertDialog.Builder(this).setTitle("请稍后").setMessage("正在提交").setCancelable(false)
                 .create()
@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
                 return
             }
             if (code != 0) {
-                submitTicker(ticket)
+                submitTicket(ticket)
                 return
             }
             AlertDialog.Builder(this).setTitle("Ticket").setMessage(ticket).setPositiveButton(
