@@ -2,8 +2,8 @@ package io.github.mzdluo123.txcaptchahelper
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -30,7 +30,14 @@ class CaptchaActivity : AppCompatActivity() {
                 view: WebView?,
                 request: WebResourceRequest?
             ): Boolean {
-                return onJsBridgeInvoke(request!!)
+                return onJsBridgeInvoke(request!!.url)
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                url: String?
+            ): Boolean {
+                return onJsBridgeInvoke(Uri.parse(url))
             }
         }
         WebView.setWebContentsDebuggingEnabled(true)
@@ -40,9 +47,9 @@ class CaptchaActivity : AppCompatActivity() {
         }
     }
 
-    private fun onJsBridgeInvoke(request: WebResourceRequest): Boolean {
-        if (request.url.path.equals("/onVerifyCAPTCHA")) {
-            val p = request.url.getQueryParameter("p")
+    private fun onJsBridgeInvoke(request: Uri): Boolean {
+        if (request.path.equals("/onVerifyCAPTCHA")) {
+            val p = request.getQueryParameter("p")
             val jsData = JsonParser.parseString(p).asJsonObject
             authFinish(jsData["ticket"].asString)
         }
