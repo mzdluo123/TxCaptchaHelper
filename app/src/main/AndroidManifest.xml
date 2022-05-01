@@ -13,7 +13,8 @@
         android:theme="@style/Theme.TxCaptchaHelper"
         android:usesCleartextTraffic="true">
         <activity android:name=".QRScanActivity"></activity>
-        <activity android:name=".CaptchaActivity" />
+        <activity android:name=".CaptchaActivity"
+            android:exported="true"/>
         <activity android:name="com.king.zxing.CaptureActivity"/>
         <activity android:name=".MainActivity">
             <intent-filter>

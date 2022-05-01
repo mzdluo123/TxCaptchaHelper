@@ -2,19 +2,27 @@ package io.github.mzdluo123.txcaptchahelper
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.JsonParser
 import kotlinx.android.synthetic.main.activity_captcha.*
+import okhttp3.*
+import java.io.IOException
+import java.util.*
 
 class CaptchaActivity : AppCompatActivity() {
     companion object {
         const val RESULT_OK = 0
+        val TAG = CaptchaActivity::class.java.name
     }
+
+    private val okhttp = lazy { OkHttpClient() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +33,7 @@ class CaptchaActivity : AppCompatActivity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun initWebView() {
+        WebView.setWebContentsDebuggingEnabled(true)
         webview.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
                 view: WebView?,
@@ -38,6 +47,11 @@ class CaptchaActivity : AppCompatActivity() {
                 url: String?
             ): Boolean {
                 return onJsBridgeInvoke(Uri.parse(url))
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                finishCallback()
             }
         }
         WebView.setWebContentsDebuggingEnabled(true)
@@ -61,4 +75,95 @@ class CaptchaActivity : AppCompatActivity() {
         setResult(RESULT_OK, intent)
         finish()
     }
+
+    private fun finishCallback() {
+        webview.evaluateJavascript(
+            """
+            document.getElementById("slideBg").src
+        """.trimMargin()
+        ) {
+            val url = it.slice(1..it.length - 2)
+            Log.d(TAG, url)
+            if (!url.startsWith("http")) {
+                Log.w(TAG, "IMG URL EMPTY")
+                return@evaluateJavascript
+            }
+            val req = Request.Builder().url(url).build()
+            okhttp.value.newCall(req).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e(TAG, e.stackTraceToString())
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    val img = response.body?.bytes() ?: return
+                    val bitmap = BitmapFactory.decodeByteArray(img, 0, img.size)
+                    processImg(bitmap)
+                }
+
+            })
+        }
+
+    }
+
+    private fun processImg(bitmap: Bitmap) {
+
+        runOnUiThread {
+            webview.evaluateJavascript(
+                """document.getElementById("slideBlock").style.top.slice(0,-2) 
+/ document.getElementById("slideBg").height
+* document.getElementById("slideBg").naturalHeight """
+            ) {
+                Log.d(TAG, "height $it")
+                val height = it.toFloat().toInt()
+                val newMap = Bitmap.createBitmap(bitmap, 0, height+10, bitmap.width, 120)
+                val top2 = calculate(newMap)
+                slide(top2)
+            }
+
+        }
+
+    }
+    fun indexesOfTopElements(orig: IntArray, nummax: Int): IntArray {
+        val copy = Arrays.copyOf(orig, orig.size)
+        Arrays.sort(copy)
+        val honey = Arrays.copyOfRange(copy, copy.size - nummax, copy.size)
+        val result = IntArray(nummax)
+        var resultPos = 0
+        for (i in orig.indices) {
+            val onTrial = orig[i]
+            val index = Arrays.binarySearch(honey, onTrial)
+            if (index < 0) continue
+            result[resultPos++] = i
+        }
+        return result
+    }
+
+    private fun calculate(bitmap:Bitmap): IntArray {
+        val new_map = Bitmap.createBitmap(bitmap.width,bitmap.height,Bitmap.Config.RGB_565)
+        val canvas = Canvas(new_map)
+        val paint = Paint()
+        val cm = ColorMatrix()
+        cm.setSaturation(0f)
+        paint.colorFilter = ColorMatrixColorFilter(cm)
+        canvas.drawBitmap(bitmap,0f,0f,paint)
+        val result = IntArray(bitmap.width) { 0 }
+        for (i in 0 until bitmap.width){
+            for (j in 0 until bitmap.height){
+                val pix = new_map.getPixel(i,j) and 0x000000FF
+                result[i] += pix
+            }
+        }
+        val top2 = indexesOfTopElements(result,2)
+        val linePaint  =Paint()
+        linePaint.color = Color.GREEN
+        Log.i(TAG,top2.toString())
+        canvas.drawLine(top2[0].toFloat(),0f, top2[0].toFloat(),new_map.height.toFloat(),linePaint)
+        canvas.drawLine(top2[1].toFloat(),0f, top2[1].toFloat(),new_map.height.toFloat(),linePaint)
+        runOnUiThread {
+            img_view.setImageBitmap(new_map)
+        }
+        return top2
+    }
+
+    private fun slide(top2:IntArray){}
 }
