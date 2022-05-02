@@ -1,13 +1,12 @@
 package io.github.mzdluo123.txcaptchahelper
 
-import android.R.attr.x
-import android.R.attr.y
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.MotionEvent
 import android.webkit.WebResourceRequest
@@ -18,6 +17,7 @@ import com.google.gson.JsonParser
 import kotlinx.android.synthetic.main.activity_captcha.*
 import okhttp3.*
 import java.io.IOException
+import java.time.LocalDate
 import java.util.*
 
 
@@ -64,8 +64,16 @@ class CaptchaActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
         }
+        webview.setOnTouchListener { view, motionEvent ->
 
+                Log.d(TAG, motionEvent.toString())
+                Log.d(TAG, "touch ${motionEvent.x} ${motionEvent.y} ${motionEvent.action}")
+
+
+            return@setOnTouchListener false
+        }
     }
+
 
     private fun onJsBridgeInvoke(request: Uri): Boolean {
         if (request.path.equals("/onVerifyCAPTCHA")) {
@@ -85,6 +93,7 @@ class CaptchaActivity : AppCompatActivity() {
     private fun finishCallback() {
         webview.evaluateJavascript(
             """
+                ${'$'}(document).bind("touchend", function(e){console.log(e)});
             document.getElementById("slideBg").src
         """.trimMargin()
         ) {
@@ -151,6 +160,7 @@ class CaptchaActivity : AppCompatActivity() {
         val paint = Paint()
         val cm = ColorMatrix()
         cm.setSaturation(0f)
+
         paint.colorFilter = ColorMatrixColorFilter(cm)
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
         val result = IntArray(bitmap.width) { 0 }
@@ -183,49 +193,83 @@ class CaptchaActivity : AppCompatActivity() {
         return top2
     }
 
+    private fun getDensity(): Float {
+        val dm = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(dm)
+        return dm.density
+    }
+
     private fun slide(top2: IntArray) {
 
-        webview.evaluateJavascript("""JSON.stringify( document.getElementById("tcaptcha_drag_thumb").getBoundingClientRect())""") {
-            Log.d(TAG, it)
-            val json = JsonParser.parseString(it.slice(1..it.length - 2).replace("\\", ""))
-            val x = json.asJsonObject.get("x").asFloat
-            val y = json.asJsonObject.get("y").asFloat
+        webview.evaluateJavascript("""JSON.stringify(document.getElementById("tcaptcha_drag_thumb").getBoundingClientRect())""") { drag ->
+            Log.d(TAG, drag)
+            val json = JsonParser.parseString(drag.slice(1..drag.length - 2).replace("\\", ""))
+            val dpi = getDensity()
 
-            val rand = Random()
-            val totalTime = rand.nextFloat()
-//            webview.dispatchTouchEvent(
-//                MotionEvent.obtain(
-//                    SystemClock.uptimeMillis(),
-//                    SystemClock.uptimeMillis()+1000,
-//                    MotionEvent.ACTION_DOWN,
-//                    x,
-//                    y,
-//                    1f,
-//                    1f,
-//                    0,
-//                    1f,
-//                    1f,
-//                    0,
-//                    0
-//                )
-//            )
-//
-//            webview.dispatchTouchEvent(
-//                MotionEvent.obtain(
-//                    SystemClock.uptimeMillis(),
-//                    SystemClock.uptimeMillis()+1000,
-//                    MotionEvent.ACTION_MOVE,
-//                    x+100,
-//                    y,
-//                    1f,
-//                    1f,
-//                    0,
-//                    1f,
-//                    1f,
-//                    0,
-//                    0
-//                )
-//            )
+            val width = json.asJsonObject.get("width").asFloat
+            val height = json.asJsonObject.get("height").asFloat
+
+            var x = json.asJsonObject.get("x").asFloat + (0.5f * width)
+            var y = json.asJsonObject.get("y").asFloat + (0.5f * height)
+
+
+            webview.evaluateJavascript(
+                """document.getElementById("slideBg").width
+/ document.getElementById("slideBg").naturalWidth"""
+            ) {
+                val values = it.toFloat()
+                val img_value = (top2[1] - top2[0]) / 2 + top2[0]
+                Log.d(TAG, "img_value $img_value")
+                val target = (img_value * values) * dpi + 30
+
+                Log.d(TAG, "target $target")
+                x *= dpi
+                y *= dpi
+                Log.d(TAG, "slider $x $y")
+
+                val rand = Random()
+                var time = SystemClock.uptimeMillis()
+                var down = time
+
+                webview.dispatchTouchEvent(
+                    MotionEvent.obtain(
+                        down,
+                        time,
+                        MotionEvent.ACTION_DOWN,
+                        x,
+                        y,
+                        0
+                    )
+                )
+                time += 100
+
+                for (i in x.toInt() until target.toInt()) {
+                    webview.dispatchTouchEvent(
+                        MotionEvent.obtain(
+                            down,
+                            time,
+                            MotionEvent.ACTION_MOVE,
+                            i.toFloat(),
+                            y,
+                            0
+                        )
+                    )
+                    time += 1
+                }
+
+                time += 100
+                webview.dispatchTouchEvent(
+                    MotionEvent.obtain(
+                        down,
+                        down,
+                        MotionEvent.ACTION_UP,
+                        target,
+                        y,
+                        0
+                    )
+                )
+
+            }
 
         }
     }
