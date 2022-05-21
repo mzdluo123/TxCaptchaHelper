@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
                     this,
                     arrayOf(Manifest.permission.CAMERA),
                     REQUEST_CODE_PERMISSION
-                );
+                )
             } else {
 //                startActivity(Intent(this, CaptchaActivity::class.java))
                 startActivityForResult(
@@ -72,7 +72,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         proj_location.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/mzdluo123/TxCaptchaHelper")))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://github.com/mzdluo123/TxCaptchaHelper")
+                )
+            )
         }
     }
 
@@ -88,18 +93,28 @@ class MainActivity : AppCompatActivity() {
             Request.Builder().url(BuildConfig.OnlineService + code).get().build()
         ).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {    dialog.dismiss()
-                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show() }
+                runOnUiThread {
+                    dialog.dismiss()
+                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
+                }
 
             }
 
             override fun onResponse(call: Call, response: Response) {
-                runOnUiThread {   dialog.dismiss()
-                    val url = response.body!!.string()
-                    toCaptchaActivity(url) }
-
+                runOnUiThread {
+                    dialog.dismiss()
+                    if (response.code == 200) {
+                        val url = response.body!!.string()
+                        toCaptchaActivity(url)
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "请求错误：" + response.code,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
-
         })
     }
 
