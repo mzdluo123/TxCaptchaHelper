@@ -72,7 +72,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         proj_location.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/mzdluo123/TxCaptchaHelper")))
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://github.com/mzdluo123/TxCaptchaHelper")
+                )
+            )
         }
     }
 
@@ -88,8 +93,10 @@ class MainActivity : AppCompatActivity() {
             Request.Builder().url(BuildConfig.OnlineService + code).get().build()
         ).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread {    dialog.dismiss()
-                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show() }
+                runOnUiThread {
+                    dialog.dismiss()
+                    Toast.makeText(this@MainActivity, e.message, Toast.LENGTH_SHORT).show()
+                }
 
             }
 
@@ -102,7 +109,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this@MainActivity,
-                            "请求错误："+response.code,
+                            "请求错误：" + response.code,
                             Toast.LENGTH_SHORT
                         ).show()
                     }
