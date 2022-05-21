@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
                     this,
                     arrayOf(Manifest.permission.CAMERA),
                     REQUEST_CODE_PERMISSION
-                );
+                )
             } else {
 //                startActivity(Intent(this, CaptchaActivity::class.java))
                 startActivityForResult(
@@ -94,12 +94,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onResponse(call: Call, response: Response) {
-                runOnUiThread {   dialog.dismiss()
-                    val url = response.body!!.string()
-                    toCaptchaActivity(url) }
-
+                runOnUiThread {
+                    dialog.dismiss()
+                    if (response.code == 200) {
+                        val url = response.body!!.string()
+                        toCaptchaActivity(url)
+                    } else {
+                        Toast.makeText(
+                            this@MainActivity,
+                            "请求错误："+response.code,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             }
-
         })
     }
 
