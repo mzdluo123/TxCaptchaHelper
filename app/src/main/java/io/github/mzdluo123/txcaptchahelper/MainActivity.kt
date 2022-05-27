@@ -1,18 +1,14 @@
 package io.github.mzdluo123.txcaptchahelper
 
-import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.king.zxing.CameraScan
 import com.king.zxing.CaptureActivity
 import kotlinx.android.synthetic.main.activity_main.*
@@ -22,7 +18,7 @@ import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
     var code: Int = 0
-    val client = OkHttpClient()
+    private val client = OkHttpClient()
 
     companion object {
         const val REQUEST_CODE_SLIDE = 1
@@ -51,25 +47,10 @@ class MainActivity : AppCompatActivity() {
 
         }
         scan_btn.setOnClickListener {
-
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.CAMERA
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.CAMERA),
-                    REQUEST_CODE_PERMISSION
-                )
-            } else {
-//                startActivity(Intent(this, CaptchaActivity::class.java))
-                startActivityForResult(
-                    Intent(this, CaptureActivity::class.java),
-                    REQUEST_CODE_QRSCAN
-                )
-
-            }
+            startActivityForResult(
+                Intent(this, CaptureActivity::class.java),
+                REQUEST_CODE_QRSCAN
+            )
         }
         proj_location.setOnClickListener {
             startActivity(
@@ -177,21 +158,20 @@ class MainActivity : AppCompatActivity() {
             }
             AlertDialog.Builder(this).setTitle("Ticket").setMessage(ticket).setPositiveButton(
                 "复制"
-            ) { dialog, which ->
+            ) { _, _ ->  // dialog, which
                 val clipboardManager =
                     getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val data = ClipData.newPlainText(null, ticket)
-                clipboardManager.setPrimaryClip(data)
+                val result = ClipData.newPlainText(null, ticket)
+                clipboardManager.setPrimaryClip(result)
                 Toast.makeText(this, "复制成功", Toast.LENGTH_SHORT).show()
             }.show()
             return
         }
+
         if (requestCode == REQUEST_CODE_QRSCAN) {
-            val data = CameraScan.parseScanResult(data)
-            toCaptchaActivity(data!!)
-            return
-        }
-        if (requestCode == REQUEST_CODE_PERMISSION) {
+            val result = CameraScan.parseScanResult(data)
+            toCaptchaActivity(result!!)
+        } else if (requestCode == REQUEST_CODE_PERMISSION) {
             startActivityForResult(Intent(this, CaptureActivity::class.java), REQUEST_CODE_QRSCAN)
         }
     }
